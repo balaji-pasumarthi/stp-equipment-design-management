@@ -1,584 +1,1061 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Screw Conveyor Design Visualizer</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Custom Wastewater Treatment Equipment — Design &amp; Manufacturing System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-  :root{
-    --blueprint:#0b2942; --blueprint-line:#4f8ec7; --blueprint-line-dim:#2a597f;
-    --paper:#f4f2ec; --ink:#1c2b36; --panel-bg:#0e3452;
+:root{
+  --bg:#0d1218; --panel:#151c24; --panel2:#111720; --border:#26323d;
+  --text:#e6edf3; --muted:#8ea0ad; --accent:#4fb8c9; --accent2:#e0a63a;
+  --sludge:#c97a3c; --danger:#d9695a; --ok:#5fbf8f; --mono:"IBM Plex Mono", monospace;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="light"]){
+    --bg:#eef1f3; --panel:#ffffff; --panel2:#f5f7f8; --border:#d7dde2;
+    --text:#161e26; --muted:#5b6b77; --accent:#2b7f91; --accent2:#a5761f; --sludge:#a85a24;
   }
-  *{box-sizing:border-box;}
-  html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);
-    font-family:'Courier New',ui-monospace,monospace;}
-  #app{display:flex;flex-direction:column;height:100%;}
-  header{background:var(--blueprint);color:#e8f1fb;padding:14px 22px;
-    border-bottom:3px solid var(--blueprint-line);}
-  header h1{font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:normal;margin:0;}
-  header .sub{font-size:12px;color:var(--blueprint-line);margin-top:3px;}
-  #main{flex:1;display:flex;min-height:0;}
-  #viewport{flex:1;position:relative;background:radial-gradient(ellipse at center, #123a58 0%, #0b2942 75%);}
-  #viewport canvas{display:block;}
-  #hint{position:absolute;bottom:32px;left:14px;font-size:11px;color:#7fa8cc;
-    background:rgba(11,41,66,0.7);padding:5px 9px;border:1px solid var(--blueprint-line-dim);}
-  #statusbar{position:absolute;left:0;right:0;bottom:0;height:28px;background:#08202f;
-    border-top:1px solid var(--blueprint-line-dim);display:flex;align-items:center;
-    justify-content:space-between;padding:0 14px;font-size:11px;color:#7fa8cc;}
-  #side{width:340px;background:var(--panel-bg);color:#e8f1fb;overflow-y:auto;
-    border-left:3px solid var(--blueprint-line);padding:18px 18px 30px;}
-  #side h2{font-family:Georgia,serif;font-weight:normal;font-size:15px;color:#9fd4ff;
-    margin:0 0 12px;padding-bottom:6px;border-bottom:1px solid var(--blueprint-line-dim);}
-  .field{margin-bottom:14px;}
-  .field label{display:flex;justify-content:space-between;font-size:12px;color:#bcd6ec;margin-bottom:5px;}
-  .field label span:last-child{color:#fff;font-weight:bold;}
-  .field input[type=range]{width:100%;accent-color:var(--blueprint-line);}
-  .toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:#bcd6ec;
-    margin-bottom:14px;cursor:pointer;}
-  .toggle input{accent-color:var(--blueprint-line);width:16px;height:16px;}
-  .readout{background:rgba(0,0,0,0.2);border:1px solid var(--blueprint-line-dim);
-    padding:10px 12px;margin-bottom:16px;font-size:12px;line-height:1.9;}
-  .readout .big{font-size:20px;color:#9fd4ff;font-weight:bold;}
-  table{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px;}
-  th,td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--blueprint-line-dim);}
-  th{color:#9fd4ff;font-weight:normal;border-bottom:1px solid var(--blueprint-line);}
-  td.num,th.num{text-align:right;}
-  tfoot td{border-top:2px solid var(--blueprint-line);border-bottom:none;color:#fff;
-    font-weight:bold;padding-top:8px;}
-  .legend{display:flex;flex-direction:column;gap:6px;margin:14px 0;font-size:11px;color:#bcd6ec;}
-  .legend div{display:flex;align-items:center;gap:8px;}
-  .swatch{width:14px;height:14px;flex:none;}
-  @media (max-width: 760px){
-    #main{flex-direction:column;}
-    #side{width:auto;border-left:none;border-top:3px solid var(--blueprint-line);}
-    #viewport{height:48vh;}
-  }
+}
+:root[data-theme="dark"]{ --bg:#0d1218; --panel:#151c24; --panel2:#111720; --border:#26323d; --text:#e6edf3; --muted:#8ea0ad; --accent:#4fb8c9; --accent2:#e0a63a; }
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg);color:var(--text);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:hidden;}
+h1,h2,h3,.disp{font-family:"Space Grotesk",system-ui,sans-serif;letter-spacing:-0.01em;}
+.mono{font-family:var(--mono);}
+button{font-family:inherit;}
+
+#app{position:fixed;inset:0;display:grid;grid-template-rows:52px 1fr 58px;grid-template-columns:230px 1fr 300px;
+  grid-template-areas:"header header header" "left canvas right" "footer footer footer";}
+#header{grid-area:header;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+#header .t1{font-size:.92rem;font-weight:600;}
+#header .t2{font-size:.68rem;color:var(--muted);margin-top:1px;}
+#header .badge{font-size:.66rem;padding:4px 9px;border-radius:999px;border:1px solid var(--border);color:var(--muted);}
+
+#left{grid-area:left;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:14px 12px;}
+#right{grid-area:right;background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;padding:0;}
+#canvasWrap{grid-area:canvas;position:relative;background:var(--bg);}
+#footer{grid-area:footer;background:var(--panel);border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;gap:16px;padding:0 16px;flex-wrap:wrap;}
+
+.sec-title{font-size:.68rem;text-transform:none;color:var(--muted);margin:14px 0 8px;font-weight:600;}
+.sec-title:first-child{margin-top:0;}
+.waste-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border:1px solid var(--border);
+  border-radius:8px;margin-bottom:7px;cursor:grab;background:var(--panel2);font-size:.78rem;user-select:none;}
+.waste-item:active{cursor:grabbing;}
+.waste-item .dot{width:11px;height:11px;border-radius:3px;flex:none;}
+.waste-item small{color:var(--muted);display:block;font-size:.64rem;}
+
+.toggle-row{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:.76rem;}
+.toggle-row input{accent-color:var(--accent);}
+.view-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.view-btns button, .mini-btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:6px 4px;font-size:.7rem;cursor:pointer;}
+.view-btns button:hover, .mini-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+#canvasWrap canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;}
+#canvasWrap canvas:active{cursor:grabbing;}
+.label3d{position:absolute;transform:translate(-50%,-100%);font-size:.68rem;color:var(--text);
+  background:color-mix(in srgb, var(--panel) 85%, transparent);border:1px solid var(--border);
+  padding:2px 7px;border-radius:5px;pointer-events:none;white-space:nowrap;}
+.callout{position:absolute;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;
+  background:var(--accent2);color:#1a1204;font-size:.68rem;font-weight:700;display:flex;align-items:center;
+  justify-content:center;pointer-events:none;}
+
+#hud{position:absolute;top:12px;left:12px;background:color-mix(in srgb, var(--panel) 82%, transparent);
+  border:1px solid var(--border);border-radius:9px;padding:9px 13px;font-size:.7rem;backdrop-filter:blur(6px);}
+#hud .row{display:flex;justify-content:space-between;gap:16px;padding:1px 0;}
+#hud .row span:first-child{color:var(--muted);}
+#hint{position:absolute;bottom:12px;left:12px;font-size:.66rem;color:var(--muted);
+  background:color-mix(in srgb, var(--panel) 75%, transparent);padding:5px 10px;border-radius:6px;}
+
+#footer button.primary{background:var(--accent);border:none;color:#06232a;font-weight:600;}
+#footer button.primary.paused{background:var(--accent2);color:#221a03;}
+#footer .fbtn{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:7px;
+  padding:8px 14px;font-size:.76rem;cursor:pointer;}
+#footer .fbtn:hover{border-color:var(--accent);}
+#footer .fdiv{width:1px;height:24px;background:var(--border);}
+#footer .flabel{font-size:.68rem;color:var(--muted);}
+#footer #speed{width:90px;accent-color:var(--accent);}
+#modePill{font-size:.66rem;padding:4px 10px;border-radius:999px;border:1px solid var(--border);}
+#modePill.running{color:var(--ok);border-color:var(--ok);}
+#modePill.idle{color:var(--muted);}
+
+.tabs{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel);z-index:2;}
+.tabs button{flex:1;background:none;border:none;color:var(--muted);font-size:.68rem;padding:11px 4px;
+  cursor:pointer;border-bottom:2px solid transparent;}
+.tabs button.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tabpanel{display:none;padding:14px 16px;}
+.tabpanel.active{display:block;}
+.tabpanel h3{font-size:.8rem;margin:0 0 4px;}
+.tabpanel .note{font-size:.68rem;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.75rem;margin-bottom:14px;}
+.kv dt{color:var(--muted);}
+.kv dd{margin:0;text-align:right;}
+.stat-tag{display:inline-block;font-size:.6rem;letter-spacing:.02em;color:var(--accent2);
+  border:1px solid var(--border);padding:2px 7px;border-radius:5px;margin-bottom:8px;}
+
+table.bom{width:100%;border-collapse:collapse;font-size:.7rem;}
+table.bom th,table.bom td{border-bottom:1px solid var(--border);padding:6px 4px;text-align:left;}
+table.bom th{color:var(--muted);font-weight:500;font-size:.64rem;}
+
+.calc-card, .draw-card, .flow-step{border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+  margin-bottom:10px;background:var(--panel2);}
+.calc-card h4{margin:0 0 6px;font-size:.76rem;}
+.calc-grid{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:.68rem;}
+.calc-grid dt{color:var(--muted);}
+.calc-grid dd{margin:0;}
+.calc-result{margin-top:6px;font-size:.74rem;color:var(--ok);}
+
+.draw-card{display:flex;gap:10px;align-items:center;cursor:default;}
+.draw-card svg{flex:none;border:1px solid var(--border);border-radius:4px;background:var(--panel);}
+.draw-meta{font-size:.64rem;color:var(--muted);line-height:1.6;}
+.draw-meta b{color:var(--text);font-size:.72rem;}
+
+.flow-step{cursor:pointer;}
+.flow-step .fh{display:flex;justify-content:space-between;align-items:center;font-size:.74rem;font-weight:500;}
+.flow-step .fh span.n{color:var(--accent);margin-right:6px;}
+.flow-desc{font-size:.68rem;color:var(--muted);margin-top:6px;display:none;line-height:1.5;}
+.flow-step.open .flow-desc{display:block;}
+
+#inspectEmpty{font-size:.74rem;color:var(--muted);text-align:center;padding:40px 10px;}
+.insp-name{font-size:.86rem;font-weight:600;margin-bottom:8px;}
+.insp-block{margin-bottom:10px;}
+.insp-block .lbl{font-size:.62rem;color:var(--muted);margin-bottom:2px;}
+.insp-block .val{font-size:.76rem;}
+
+@media (max-width: 860px){
+  #app{grid-template-columns:0 1fr 0;}
+  #left,#right{display:none;}
+}
 </style>
 </head>
 <body>
 <div id="app">
-  <header>
-    <h1>Screw Conveyor Design Visualizer</h1>
-    <div class="sub">Parametric model, conveying capacity &amp; material take-off — water/waste treatment equipment design</div>
-  </header>
-  <div id="main">
-    <div id="viewport">
-      <div id="hint">Drag to orbit · Scroll to zoom</div>
-      <div id="statusbar">
-        <span id="statusInfo">Screw conveyor — trough type</span>
-        <span id="statusCount">– segments modeled</span>
-        <span>Units: m, kg, m³/hr</span>
-      </div>
+
+  <div id="header">
+    <div>
+      <div class="t1">Custom Wastewater Treatment Equipment</div>
+      <div class="t2">Interactive 3D Screening, Sedimentation, Sludge Collection &amp; Screw Conveyor System</div>
     </div>
-    <div id="side">
-      <h2>Design parameters</h2>
+    <div class="badge">Mechanical Design Demonstrator</div>
+  </div>
 
-      <div class="field">
-        <label><span>Conveyor length (m)</span><span id="vLen">3.0</span></label>
-        <input type="range" id="length" min="1" max="6" step="0.25" value="3">
-      </div>
-      <div class="field">
-        <label><span>Screw (flight) diameter (mm)</span><span id="vDia">300</span></label>
-        <input type="range" id="diameter" min="150" max="500" step="10" value="300">
-      </div>
-      <div class="field">
-        <label><span>Shaft diameter (mm)</span><span id="vShaft">60</span></label>
-        <input type="range" id="shaft" min="30" max="120" step="5" value="60">
-      </div>
-      <div class="field">
-        <label><span>Pitch (mm)</span><span id="vPitch">250</span></label>
-        <input type="range" id="pitch" min="100" max="400" step="10" value="250">
-      </div>
-      <div class="field">
-        <label><span>Speed (RPM)</span><span id="vRpm">40</span></label>
-        <input type="range" id="rpm" min="10" max="100" step="5" value="40">
-      </div>
-      <div class="field">
-        <label><span>Incline angle (°)</span><span id="vIncline">0</span></label>
-        <input type="range" id="incline" min="0" max="30" step="1" value="0">
-      </div>
-      <div class="field">
-        <label><span>Fill factor (%)</span><span id="vFill">30</span></label>
-        <input type="range" id="fill" min="15" max="45" step="5" value="30">
-      </div>
-      <label class="toggle"><input type="checkbox" id="showTrough" checked> Show trough housing</label>
+  <div id="left">
+    <div class="sec-title">Waste input — drag into inlet</div>
+    <div id="wasteList"></div>
 
-      <h2>Wastewater process</h2>
-      <div class="readout">
-        <div>Status: <span class="big" id="processStatus">Idle</span></div>
-        <div>Waste remaining in tank: <span id="wasteRemaining">100</span>%</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <button id="startBtn" style="flex:1;background:transparent;border:1px solid var(--blueprint-line);color:#9fd4ff;padding:8px;font-family:inherit;font-size:12px;cursor:pointer;">Start</button>
-        <button id="pauseBtn" style="flex:1;background:transparent;border:1px solid var(--blueprint-line);color:#9fd4ff;padding:8px;font-family:inherit;font-size:12px;cursor:pointer;">Pause</button>
-        <button id="resetBtn" style="flex:1;background:transparent;border:1px solid var(--blueprint-line);color:#9fd4ff;padding:8px;font-family:inherit;font-size:12px;cursor:pointer;">Reset</button>
-      </div>
+    <div class="sec-title">Visibility</div>
+    <div id="visList"></div>
 
-      <div class="readout">
-        <div>Conveying capacity: <span class="big" id="capacity">–</span> m³/hr</div>
-        <div>Drive speed: <span id="rpmOut">–</span> rpm &nbsp;|&nbsp; Flights: <span id="turnsOut">–</span></div>
-      </div>
-
-      <div class="legend">
-        <div><span class="swatch" style="background:#8b8f99"></span>Shaft — solid steel bar</div>
-        <div><span class="swatch" style="background:#3a6b8a"></span>Flight — helical steel ribbon</div>
-        <div><span class="swatch" style="background:#2b3a55"></span>Trough — U-channel plate</div>
-        <div><span class="swatch" style="background:#6b5a3a"></span>Wastewater (feed tank)</div>
-        <div><span class="swatch" style="background:#3a8ab8"></span>Treated water (outlet)</div>
-      </div>
-
-      <h2>Material take-off (live)</h2>
-      <table id="bomTable">
-        <thead><tr><th>Component</th><th class="num">Qty</th><th class="num">Wt (kg)</th></tr></thead>
-        <tbody id="bomBody"></tbody>
-        <tfoot>
-          <tr><td>Total</td><td class="num" id="bomQty">–</td><td class="num" id="bomWt">–</td></tr>
-        </tfoot>
-      </table>
+    <div class="sec-title">Camera views</div>
+    <div class="view-btns">
+      <button data-view="iso">Isometric</button>
+      <button data-view="front">Front</button>
+      <button data-view="top">Top</button>
+      <button data-view="side">Side</button>
+      <button data-view="reset">Reset</button>
+      <button id="explodeBtn">Explode</button>
     </div>
   </div>
+
+  <div id="canvasWrap">
+    <div id="hud">
+      <div class="row"><span>Flow rate</span><span id="hudFlow">0 m³/day</span></div>
+      <div class="row"><span>Screen load</span><span id="hudScreen">0 items</span></div>
+      <div class="row"><span>Settled solids</span><span id="hudSettled">0</span></div>
+      <div class="row"><span>Collector speed</span><span id="hudCollector">0 m/min</span></div>
+      <div class="row"><span>Conveyor speed</span><span id="hudConveyor">0 rpm</span></div>
+      <div class="row"><span>Discharge</span><span id="hudDischarge">—</span></div>
+    </div>
+    <div id="hint">Drag / click waste items · drag canvas to orbit · scroll to zoom · click a part to inspect</div>
+  </div>
+
+  <div id="right">
+    <div class="tabs">
+      <button class="active" data-tab="status">Status</button>
+      <button data-tab="inspect">Inspect</button>
+      <button data-tab="bom">BOM</button>
+      <button data-tab="calc">Calcs</button>
+      <button data-tab="draw">Drawings</button>
+      <button data-tab="flow">Workflow</button>
+      <button data-tab="about">About</button>
+    </div>
+
+    <div class="tabpanel active" data-tab="status">
+      <span class="stat-tag">SIMULATED PROCESS DATA</span>
+      <h3>System status</h3>
+      <div class="kv">
+        <dt>Operating state</dt><dd id="stOpState">IDLE</dd>
+        <dt>Design flow</dt><dd>500 m³/day</dd>
+        <dt>Tank</dt><dd>8000 × 3000 × 2500 mm</dd>
+        <dt>Collector</dt><dd>Chain &amp; flight</dd>
+        <dt>Conveyor</dt><dd>Ø200 mm / 150 mm pitch</dd>
+        <dt>Active particles</dt><dd id="stParticles">0</dd>
+        <dt>Discharged total</dt><dd id="stDischarged">0</dd>
+      </div>
+      <span class="stat-tag">CONCEPTUAL DESIGN PARAMETERS</span>
+      <p class="note">Tank, collector and conveyor dimensions are design-basis assumptions for this demonstrator, not measured or certified specifications of any real facility or manufacturer.</p>
+    </div>
+
+    <div class="tabpanel" data-tab="inspect">
+      <div id="inspectEmpty">Click any machine component in the 3D view to see its engineering summary here.</div>
+      <div id="inspectContent" style="display:none;">
+        <div class="insp-name" id="iName"></div>
+        <div class="insp-block"><div class="lbl">Function</div><div class="val" id="iFunc"></div></div>
+        <div class="insp-block"><div class="lbl">Material — conceptual selection</div><div class="val" id="iMat"></div></div>
+        <div class="insp-block"><div class="lbl">Manufacturing</div><div class="val" id="iManu"></div></div>
+        <div class="insp-block"><div class="lbl">Design considerations</div><div class="val" id="iDesign"></div></div>
+      </div>
+    </div>
+
+    <div class="tabpanel" data-tab="bom">
+      <h3>Bill of materials</h3>
+      <table class="bom" id="bomTable"></table>
+    </div>
+
+    <div class="tabpanel" data-tab="calc">
+      <span class="stat-tag">PRELIMINARY DESIGN CALCULATIONS</span>
+      <p class="note">Hand-calculation level estimates for sizing rationale only — not physically validated or FEA-checked results.</p>
+      <div id="calcList"></div>
+    </div>
+
+    <div class="tabpanel" data-tab="draw">
+      <span class="stat-tag">CONCEPTUAL MANUFACTURING DRAWINGS</span>
+      <p class="note">Schematic title-block previews, not certified production drawings.</p>
+      <div id="drawList"></div>
+    </div>
+
+    <div class="tabpanel" data-tab="flow">
+      <h3>Manufacturing workflow</h3>
+      <div id="flowList"></div>
+    </div>
+
+    <div class="tabpanel" data-tab="about">
+      <h3>About this project</h3>
+      <p class="note" style="font-size:.74rem;color:var(--text);line-height:1.6;">
+      <b>Objective —</b> design and visualize a custom wastewater treatment equipment system integrating mechanical screening, sedimentation, sludge collection and screw-conveyor handling, from an incoming waste stream through to discharge.
+      </p>
+      <p class="note" style="font-size:.74rem;color:var(--text);line-height:1.6;">
+      <b>Approach —</b> 3D mechanical modeling, component-level design, structural support design, preliminary strength calculations, conceptual material selection, manufacturing-process planning, assembly visualization and interactive operation simulation.
+      </p>
+      <p class="note">All flows, dimensions and material call-outs are conceptual design assumptions made for this demonstrator.</p>
+    </div>
+  </div>
+
+  <div id="footer">
+    <button class="fbtn primary" id="startBtn">Start</button>
+    <button class="fbtn" id="resetBtn">Reset</button>
+    <div class="fdiv"></div>
+    <span class="flabel">Speed</span>
+    <input id="speed" type="range" min="0.25" max="2.5" step="0.05" value="1" />
+    <div class="fdiv"></div>
+    <span id="modePill" class="idle">IDLE</span>
+  </div>
+
 </div>
 
 <script>
-const STEEL_DENSITY = 7850; // kg/m3
+/* ======================================================================
+   SECTION: CONSTANTS & GLOBAL STATE
+   ====================================================================== */
+var WASTE_TYPES = [
+  { id:'bottle',  name:'Plastic bottle',   cat:'large',   color:0x6fb7c9, note:'Screened' },
+  { id:'can',     name:'Can',              cat:'large',   color:0x9aa7b0, note:'Screened' },
+  { id:'debris',  name:'Solid debris',     cat:'large',   color:0x7a6a58, note:'Screened' },
+  { id:'organic', name:'Organic waste',    cat:'organic', color:0x6b8f4e, note:'Slow settling' },
+  { id:'sand',    name:'Sand particles',   cat:'sand',    color:0xcbb37a, note:'Fast settling' },
+  { id:'sludge',  name:'Sludge particles', cat:'sludge',  color:0xc97a3c, note:'Settles + conveyed' }
+];
 
-// ---------- Three.js setup ----------
-const viewport = document.getElementById('viewport');
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-viewport.appendChild(renderer.domElement);
+var TANK_L=8, TANK_W=3, TANK_H=2.5;
+var trackHalfLen = TANK_L/2 - 0.9;      // 3.1
+var trackLowY=0.14, trackHighY=TANK_H-0.55, trackR, trackCenterY;
+trackR = (trackHighY-trackLowY)/2; trackCenterY=(trackHighY+trackLowY)/2;
+var hopperX = trackHalfLen+0.55, hopperY=-0.05;
+var CONV_LEN=4.2, CONV_R=0.32, convX0=trackHalfLen+0.9, convY=-0.9;
+var SCREEN_X=-TANK_L/2-0.05;
+var BIN_POS = new THREE.Vector3(SCREEN_X-0.35, 2.55, 1.75);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const dl = new THREE.DirectionalLight(0xffffff, 0.9);
-dl.position.set(6, 8, 5);
-scene.add(dl);
-const dl2 = new THREE.DirectionalLight(0x9fd4ff, 0.35);
-dl2.position.set(-5, 3, -6);
-scene.add(dl2);
-scene.add(new THREE.GridHelper(12, 24, 0x2a597f, 0x1a3d5c));
+var running=false, speedMul=1, elapsed=0, explode=false, explodeT=0;
+var discharged=0, screenLoad=0, settledCount=0;
 
-const rig = new THREE.Group(); // rotates for incline angle
-scene.add(rig);
-const conveyorGroup = new THREE.Group();
-const tankGroup = new THREE.Group();
-const outletGroup = new THREE.Group();
-rig.add(conveyorGroup);
-rig.add(tankGroup);
-rig.add(outletGroup);
-
-const mats = {
-  shaft: new THREE.MeshStandardMaterial({ color: 0x8b8f99, metalness: 0.6, roughness: 0.35 }),
-  flight: new THREE.MeshStandardMaterial({ color: 0x3a6b8a, metalness: 0.5, roughness: 0.4, side: THREE.DoubleSide }),
-  trough: new THREE.MeshStandardMaterial({ color: 0x2b3a55, metalness: 0.3, roughness: 0.6, side: THREE.DoubleSide, transparent: true, opacity: 0.55 }),
-  tankWall: new THREE.MeshStandardMaterial({ color: 0x9fb6c9, metalness: 0.2, roughness: 0.5, transparent: true, opacity: 0.25, side: THREE.DoubleSide }),
-  wasteWater: new THREE.MeshStandardMaterial({ color: 0x6b5a3a, metalness: 0.1, roughness: 0.6, transparent: true, opacity: 0.75 }),
-  cleanWater: new THREE.MeshStandardMaterial({ color: 0x3a8ab8, metalness: 0.2, roughness: 0.3, transparent: true, opacity: 0.7 }),
-  wasteParticle: new THREE.MeshStandardMaterial({ color: 0x4a3a24, roughness: 0.8 })
-};
-
-// ---------- Feed tank & outlet (wastewater in, treated water out) ----------
-let waterMesh = null;
-let particles = []; // {mesh, phase:'tank'|'transit', t}
-let running = false;
-const PARTICLE_COUNT = 22;
-let tankBounds = { x0: -1, x1: -0.15, y0: -0.3, y1: 0.25, z0: -0.25, z1: 0.25 };
-
-function buildTankAndOutlet(geo, p) {
-  while (tankGroup.children.length) tankGroup.remove(tankGroup.children[0]);
-  while (outletGroup.children.length) outletGroup.remove(outletGroup.children[0]);
-  particles = [];
-
-  const tankW = geo.outerR * 3.2, tankH = geo.outerR * 2.6, tankD = geo.outerR * 3.2;
-  const tankX = -tankW / 2 - geo.outerR * 0.6; // sits before conveyor inlet (x=0)
-
-  // tank walls (box, wireframe-ish transparent)
-  const wallGeom = new THREE.BoxGeometry(tankW, tankH, tankD);
-  const wallMesh = new THREE.Mesh(wallGeom, mats.tankWall);
-  wallMesh.position.set(tankX, tankH / 2 - geo.outerR * 0.9, 0);
-  tankGroup.add(wallMesh);
-
-  // water volume inside tank (murky, will clear over time)
-  const waterGeom = new THREE.BoxGeometry(tankW * 0.92, tankH * 0.75, tankD * 0.92);
-  waterMesh = new THREE.Mesh(waterGeom, mats.wasteWater.clone());
-  waterMesh.position.set(tankX, tankH * 0.3 - geo.outerR * 0.9, 0);
-  tankGroup.add(waterMesh);
-
-  tankBounds = {
-    x0: tankX - tankW * 0.4, x1: tankX + tankW * 0.4,
-    y0: waterMesh.position.y - tankH * 0.3, y1: waterMesh.position.y + tankH * 0.3,
-    z0: -tankD * 0.4, z1: tankD * 0.4
-  };
-
-  // waste particles floating in tank water
-  const particleGeom = new THREE.SphereGeometry(geo.outerR * 0.09, 8, 8);
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const mesh = new THREE.Mesh(particleGeom, mats.wasteParticle);
-    const pos = randomTankPoint();
-    mesh.position.copy(pos);
-    tankGroup.add(mesh);
-    particles.push({ mesh, phase: 'tank', t: Math.random(), speed: 0.15 + Math.random() * 0.1 });
-  }
-
-  // outlet: clean water trough at the far end (x = L), offset to the side so it doesn't overlap the waste bin
-  const outletLen = geo.outerR * 2.0;
-  const outletGeom = new THREE.BoxGeometry(outletLen, geo.outerR * 0.8, geo.outerR * 1.3);
-  const outletMesh = new THREE.Mesh(outletGeom, mats.cleanWater);
-  outletMesh.position.set(geo.L + outletLen / 2 + geo.outerR * 0.3, geo.outerR * 0.1, -geo.outerR * 1.3);
-  outletGroup.add(outletMesh);
-
-  // waste collection bin directly below the discharge end — an open-top box
-  const binW = geo.outerR * 1.8, binH = geo.outerR * 1.6, binD = geo.outerR * 1.8;
-  const binWallThk = geo.outerR * 0.08;
-  const binX = geo.L + geo.outerR * 0.1;
-  const binTopY = -geo.outerR * 1.0;      // bin opening sits just under the conveyor discharge
-  const binBottomY = binTopY - binH;
-
-  const binMat = mats.trough;
-  const binGroup = new THREE.Group();
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(binW, binWallThk, binD), binMat);
-  floor.position.set(binX, binBottomY, 0);
-  binGroup.add(floor);
-  const wallSpecs = [
-    [binW, binH, binWallThk, binX, binTopY - binH / 2, binD / 2],
-    [binW, binH, binWallThk, binX, binTopY - binH / 2, -binD / 2],
-    [binWallThk, binH, binD, binX - binW / 2, binTopY - binH / 2, 0],
-    [binWallThk, binH, binD, binX + binW / 2, binTopY - binH / 2, 0]
-  ];
-  wallSpecs.forEach(([w, h, d, x, y, z]) => {
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats.tankWall);
-    wall.position.set(x, y, z);
-    binGroup.add(wall);
-  });
-  outletGroup.add(binGroup);
-
-  // waste pile inside the bin — grows upward from the floor as particles land
-  const pileMesh = new THREE.Mesh(new THREE.BoxGeometry(binW * 0.85, 0.001, binD * 0.85), mats.wasteParticle);
-  pileMesh.position.set(binX, binBottomY + binWallThk / 2, 0);
-  outletGroup.add(pileMesh);
-
-  outletGroup.userData.pile = pileMesh;
-  outletGroup.userData.pileLevel = 0;
-  outletGroup.userData.binX = binX;
-  outletGroup.userData.binTopY = binTopY;
-  outletGroup.userData.binBottomY = binBottomY;
-  outletGroup.userData.binMaxH = binH * 0.9;
-  outletGroup.userData.binW = binW;
-  outletGroup.userData.binD = binD;
+/* ======================================================================
+   SECTION: THREE.JS SCENE, CAMERA, ORBIT, RENDERER
+   ====================================================================== */
+var wrap = document.getElementById('canvasWrap');
+var scene = new THREE.Scene();
+function bgColor(){
+  var dark = !document.documentElement.matches('[data-theme="light"]') &&
+    (document.documentElement.matches('[data-theme="dark"]') || window.matchMedia('(prefers-color-scheme: dark)').matches);
+  return dark?0x0d1218:0xeef1f3;
 }
+scene.background = new THREE.Color(bgColor());
+scene.fog = new THREE.Fog(scene.background.getHex(), 20, 46);
 
-function randomTankPoint() {
-  return new THREE.Vector3(
-    tankBounds.x0 + Math.random() * (tankBounds.x1 - tankBounds.x0),
-    tankBounds.y0 + Math.random() * (tankBounds.y1 - tankBounds.y0),
-    tankBounds.z0 + Math.random() * (tankBounds.z1 - tankBounds.z0)
-  );
-}
+var camera = new THREE.PerspectiveCamera(42, wrap.clientWidth/wrap.clientHeight, 0.1, 120);
+var renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+wrap.appendChild(renderer.domElement);
 
-function resetProcess() {
-  running = false;
-  particles.forEach(p => { p.phase = 'tank'; p.t = Math.random(); p.mesh.position.copy(randomTankPoint()); p.mesh.visible = true; p.mesh.scale.setScalar(1); });
-  if (waterMesh) { waterMesh.material.color.set(0x6b5a3a); waterMesh.material.opacity = 0.75; }
-  if (outletGroup.userData.pile) {
-    outletGroup.userData.pileLevel = 0;
-    outletGroup.userData.pile.scale.y = 0.001;
-    outletGroup.userData.pile.position.y = outletGroup.userData.binBottomY;
-  }
-  document.getElementById('processStatus').textContent = 'Idle';
-  document.getElementById('wasteRemaining').textContent = '100';
-}
+scene.add(new THREE.HemisphereLight(0xdfeaf0,0x1a1f24,0.95));
+var dirL = new THREE.DirectionalLight(0xffffff,0.95); dirL.position.set(9,13,7); scene.add(dirL);
+var fillL = new THREE.DirectionalLight(0x88aacc,0.35); fillL.position.set(-7,5,-9); scene.add(fillL);
 
-// ---------- Camera orbit ----------
-let target = new THREE.Vector3(0, 0, 0);
-let radius = 6, azimuth = Math.PI * 0.25, elevation = 0.4;
-let dragging = false, lastX = 0, lastY = 0;
-function updateCamera() {
-  const e = Math.max(0.05, Math.min(1.5, elevation));
-  camera.position.set(target.x + radius * Math.cos(e) * Math.sin(azimuth),
-                       target.y + radius * Math.sin(e),
-                       target.z + radius * Math.cos(e) * Math.cos(azimuth));
-  camera.lookAt(target);
+var target = new THREE.Vector3(0.5,0.8,0);
+var radius=15, theta=Math.PI*0.26, phi=Math.PI*0.36;
+var tweenTarget=null, tweenStart=0, tweenDur=0.7;
+function camPose(){ return {radius:radius, theta:theta, phi:phi, target:target.clone()}; }
+var defaultPose = camPose();
+
+function updateCamera(){
+  var x = target.x + radius*Math.sin(phi)*Math.sin(theta);
+  var y = target.y + radius*Math.cos(phi);
+  var z = target.z + radius*Math.sin(phi)*Math.cos(theta);
+  camera.position.set(x,y,z); camera.lookAt(target);
 }
-viewport.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
-window.addEventListener('pointerup', () => dragging = false);
-window.addEventListener('pointermove', e => {
-  if (!dragging) return;
-  azimuth -= (e.clientX - lastX) * 0.007;
-  elevation += (e.clientY - lastY) * 0.006;
-  lastX = e.clientX; lastY = e.clientY;
-  updateCamera();
+updateCamera();
+
+function goToView(name){
+  var p;
+  if(name==='iso') p={radius:15,theta:Math.PI*0.26,phi:Math.PI*0.36,target:new THREE.Vector3(0.5,0.8,0)};
+  else if(name==='front') p={radius:13,theta:0,phi:Math.PI/2-0.02,target:new THREE.Vector3(0.5,1.1,0)};
+  else if(name==='top') p={radius:15,theta:0.001,phi:0.08,target:new THREE.Vector3(0.5,0,0)};
+  else if(name==='side') p={radius:12,theta:Math.PI/2,phi:Math.PI/2-0.05,target:new THREE.Vector3(0.5,1.1,0)};
+  else p=defaultPose;
+  tweenTarget=p; tweenStart=elapsed;
+}
+document.querySelectorAll('.view-btns [data-view]').forEach(function(b){
+  b.addEventListener('click',function(){ goToView(b.dataset.view); });
 });
-viewport.addEventListener('wheel', e => {
-  e.preventDefault();
-  radius = Math.max(1.5, Math.min(40, radius + e.deltaY * 0.01));
-  updateCamera();
-}, { passive: false });
-function resize() {
-  const w = viewport.clientWidth, h = viewport.clientHeight;
-  camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
-}
-window.addEventListener('resize', resize);
 
-// ---------- Helical flight geometry builder ----------
-function buildFlightGeometry(length, shaftR, outerR, pitch, segPerTurn) {
-  const turns = length / pitch;
-  const totalSegs = Math.max(8, Math.round(turns * segPerTurn));
-  const positions = [];
-  for (let s = 0; s < totalSegs; s++) {
-    const u0 = s / totalSegs, u1 = (s + 1) / totalSegs;
-    const x0 = u0 * length, x1 = u1 * length;
-    const a0 = u0 * turns * Math.PI * 2, a1 = u1 * turns * Math.PI * 2;
-    const iy0 = shaftR * Math.cos(a0), iz0 = shaftR * Math.sin(a0);
-    const oy0 = outerR * Math.cos(a0), oz0 = outerR * Math.sin(a0);
-    const iy1 = shaftR * Math.cos(a1), iz1 = shaftR * Math.sin(a1);
-    const oy1 = outerR * Math.cos(a1), oz1 = outerR * Math.sin(a1);
-    // two triangles forming this ribbon segment
-    positions.push(x0, iy0, iz0,  x0, oy0, oz0,  x1, oy1, oz1);
-    positions.push(x0, iy0, iz0,  x1, oy1, oz1,  x1, iy1, iz1);
+var dragging=false,lastX=0,lastY=0,dragMoved=false;
+function pDown(x,y){dragging=true;lastX=x;lastY=y;dragMoved=false;}
+function pMove(x,y){ if(!dragging) return; var dx=x-lastX,dy=y-lastY; lastX=x;lastY=y;
+  if(Math.abs(dx)+Math.abs(dy)>2) dragMoved=true;
+  theta -= dx*0.006; phi -= dy*0.006; phi=Math.max(0.1,Math.min(Math.PI/2-0.03,phi));
+  tweenTarget=null; updateCamera(); }
+function pUp(){dragging=false;}
+renderer.domElement.addEventListener('mousedown',function(e){pDown(e.clientX,e.clientY);});
+window.addEventListener('mousemove',function(e){pMove(e.clientX,e.clientY);});
+window.addEventListener('mouseup',pUp);
+renderer.domElement.addEventListener('touchstart',function(e){var t=e.touches[0];pDown(t.clientX,t.clientY);},{passive:true});
+renderer.domElement.addEventListener('touchmove',function(e){var t=e.touches[0];pMove(t.clientX,t.clientY);},{passive:true});
+renderer.domElement.addEventListener('touchend',pUp);
+renderer.domElement.addEventListener('wheel',function(e){e.preventDefault();radius+=e.deltaY*0.012;
+  radius=Math.max(6,Math.min(28,radius));tweenTarget=null;updateCamera();},{passive:false});
+
+/* click to inspect (only if not a drag) */
+var raycaster=new THREE.Raycaster(), mouse=new THREE.Vector2();
+renderer.domElement.addEventListener('click',function(e){
+  if(dragMoved) return;
+  var r=renderer.domElement.getBoundingClientRect();
+  mouse.x=((e.clientX-r.left)/r.width)*2-1;
+  mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  var hits=raycaster.intersectObjects(inspectables,true);
+  if(hits.length){
+    var o=hits[0].object;
+    while(o && !o.userData.info) o=o.parent;
+    if(o && o.userData.info) showInspect(o.userData.info);
   }
-  const geom = new THREE.BufferGeometry();
-  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geom.computeVertexNormals();
-  return { geom, turns };
+});
+
+/* ======================================================================
+   SECTION: MATERIALS
+   ====================================================================== */
+var matShell=new THREE.MeshStandardMaterial({color:0x7b8b96,transparent:true,opacity:0.15,metalness:0.2,roughness:0.6,side:THREE.DoubleSide});
+var matShellEdge=new THREE.LineBasicMaterial({color:0x9fb0bb,transparent:true,opacity:0.5});
+var matWater=new THREE.MeshStandardMaterial({color:0x4fb8c9,transparent:true,opacity:0.3,metalness:0.1,roughness:0.2});
+var matSteel=new THREE.MeshStandardMaterial({color:0x9aa7b0,metalness:0.55,roughness:0.45});
+var matDarkSteel=new THREE.MeshStandardMaterial({color:0x51606b,metalness:0.5,roughness:0.5});
+var matBrass=new THREE.MeshStandardMaterial({color:0xc9a227,metalness:0.6,roughness:0.4});
+var matSS=new THREE.MeshStandardMaterial({color:0xbfd0d6,metalness:0.75,roughness:0.3});
+var matMotor=new THREE.MeshStandardMaterial({color:0x2f3b44,metalness:0.4,roughness:0.6});
+
+/* ======================================================================
+   SECTION: MECHANICAL COMPONENTS — TANK, SLOPE, STRUCTURE
+   ====================================================================== */
+var assembly = new THREE.Group(); scene.add(assembly);
+var inspectables = [];
+function inspectable(mesh, info){ mesh.userData.info = info; inspectables.push(mesh); }
+
+var groups = {
+  tank:new THREE.Group(), screen:new THREE.Group(), collector:new THREE.Group(),
+  hopper:new THREE.Group(), conveyor:new THREE.Group(), frame:new THREE.Group(), labels:true
+};
+Object.keys(groups).forEach(function(k){ if(groups[k] instanceof THREE.Group) assembly.add(groups[k]); });
+
+/* Tank shell + water + floor + slope */
+var tankGeo=new THREE.BoxGeometry(TANK_L,TANK_H,TANK_W);
+var tankMesh=new THREE.Mesh(tankGeo,matShell); tankMesh.position.set(0,TANK_H/2,0);
+groups.tank.add(tankMesh);
+groups.tank.add(new THREE.LineSegments(new THREE.EdgesGeometry(tankGeo),matShellEdge)).children.slice(-1)[0].position.copy(tankMesh.position);
+inspectable(tankMesh,{name:'Sedimentation tank',func:'Holds the incoming flow long enough for suspended solids to settle out before treated water leaves at the outlet.',mat:'Corrosion-resistant coated carbon steel / stainless steel plate.',manu:'Plate cutting, rolling/forming, welded seams, pressure/leak tested.',design:'Sized from design flow and target retention time; wall thickness set by hydrostatic load.'});
+
+/* water shown in three zones so the cleaning progress (turbid -> clear) is visible left to right */
+var waterZones=[];
+function waterZone(x0,x1,color,opacity,name){
+  var w=x1-x0;
+  var mat=new THREE.MeshStandardMaterial({color:color,transparent:true,opacity:opacity,metalness:0.1,roughness:0.15});
+  var m=new THREE.Mesh(new THREE.BoxGeometry(w-0.02,1.85,TANK_W-0.06),mat);
+  m.position.set((x0+x1)/2,1.05,0);
+  groups.tank.add(m);
+  inspectable(m,{name:name,func:'Represents the water body at this stage of the tank; color/opacity shift shows suspended solids dropping out as flow moves toward the outlet.',mat:'Water + suspended solids (visualization only).',manu:'n/a',design:'Illustrative only — not a fluid-dynamics simulation.'});
+  waterZones.push(m);
+  return m;
+}
+waterZone(-4, -1.3, 0x8a6a45, 0.55, 'Raw water zone (turbid)');
+waterZone(-1.3, 1.3, 0x5f9fae, 0.36, 'Settling zone (clarifying)');
+waterZone(1.3, 4, 0x8fd3e0, 0.2, 'Treated water zone (clear)');
+
+/* overflow weir + treated-water outlet pipe */
+var weir=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.5,TANK_W-0.3),matSteel);
+weir.position.set(3.86,1.7,0); groups.tank.add(weir);
+inspectable(weir,{name:'Overflow weir',func:'Clarified water at the surface spills over the weir into the outlet channel while settled solids stay below, out of the flow.',mat:'Stainless steel plate.',manu:'Cut and welded, leveled on installation.',design:'Set level so flow spreads evenly across the tank width, avoiding short-circuiting.'});
+var outletPipeGeo=new THREE.CylinderGeometry(0.09,0.09,0.6,12);
+var outletPipe=new THREE.Mesh(outletPipeGeo,matSS);
+outletPipe.rotation.z=Math.PI/2; outletPipe.position.set(4.25,1.75,0);
+groups.tank.add(outletPipe);
+inspectable(outletPipe,{name:'Treated water outlet',func:'Carries clarified water away from the tank to the next process step or discharge.',mat:'Stainless steel pipe.',manu:'Pipe cut, welded flange connection.',design:'Sized to pass the design flow without surcharging the weir.'});
+
+var NUM_OUT_DRIPS=5, outDrips=[];
+for(var od=0; od<NUM_OUT_DRIPS; od++){
+  var odm=new THREE.Mesh(new THREE.SphereGeometry(0.045,8,8), new THREE.MeshStandardMaterial({color:0x9fe0ee,transparent:true,opacity:0.85,emissive:0x1f5560,emissiveIntensity:0.3}));
+  groups.tank.add(odm); outDrips.push({mesh:odm, offset:od/NUM_OUT_DRIPS});
 }
 
-function clearConveyor() {
-  while (conveyorGroup.children.length) conveyorGroup.remove(conveyorGroup.children[0]);
+var floor=new THREE.Mesh(new THREE.BoxGeometry(TANK_L,0.05,TANK_W),matSteel);
+floor.position.set(0,0,0); groups.tank.add(floor);
+
+/* sloped bottom hint near hopper end */
+var slopeGeo=new THREE.BoxGeometry(1.5,0.06,TANK_W-0.1);
+var slope=new THREE.Mesh(slopeGeo,matDarkSteel);
+slope.position.set(trackHalfLen-0.1,0.02,0); slope.rotation.z=-0.06;
+groups.tank.add(slope);
+
+/* ---- structural frame (legs + base plates) ---- */
+function leg(x,z,h,yTop){
+  var g=new THREE.Mesh(new THREE.BoxGeometry(0.14,h,0.14),matDarkSteel);
+  g.position.set(x,yTop-h/2,z); groups.frame.add(g);
+  var base=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.04,0.3),matDarkSteel);
+  base.position.set(x,yTop-h-0.02,z); groups.frame.add(base);
+  return g;
 }
+[[-3.9,-1.45],[3.9,-1.45],[-3.9,1.45],[3.9,1.45]].forEach(function(p){ leg(p[0],p[1],1.75,0); });
+leg(convX0+0.3,-0.55,1.0,convY-CONV_R);
+leg(convX0+CONV_LEN-0.3,-0.55,1.0,convY-CONV_R);
+leg(convX0+0.3,0.55,1.0,convY-CONV_R);
+leg(convX0+CONV_LEN-0.3,0.55,1.0,convY-CONV_R);
+var frameInfo={name:'Structural support frame',func:'Carries dead weight of tank, collector, hopper and conveyor and transfers loads to the foundation.',mat:'Carbon steel rectangular hollow sections (RHS).',manu:'Saw-cut, drilled, welded and bolted sub-frames; painted/galvanized finish.',design:'Sized for static equipment load plus dynamic loads from rotating machinery; braced against overturning.'};
+groups.frame.children.forEach(function(m){ inspectable(m,frameInfo); });
 
-function buildConveyor(p) {
-  clearConveyor();
-  const L = p.length, shaftR = p.shaft / 2000, outerR = p.diameter / 2000, pitchM = p.pitch / 1000;
+/* ======================================================================
+   SECTION: MECHANICAL SCREENING UNIT
+   ====================================================================== */
+var screenFrameGeo=new THREE.BoxGeometry(0.08,TANK_H-0.15,TANK_W-0.15);
+var screenFrame=new THREE.Mesh(screenFrameGeo,matSS);
+screenFrame.position.set(SCREEN_X,TANK_H/2-0.05,0); groups.screen.add(screenFrame);
+inspectable(screenFrame,{name:'Screen frame',func:'Holds the screen bars square and rigid across the channel and reacts the flow load on the screen.',mat:'Stainless steel channel/plate.',manu:'Plate cutting, welded frame, bolted to channel walls.',design:'Stiffened against flow-induced deflection and blinding load from trapped debris.'});
 
-  // shaft
-  const shaftGeom = new THREE.CylinderGeometry(shaftR, shaftR, L, 20);
-  shaftGeom.rotateZ(Math.PI / 2);
-  const shaftMesh = new THREE.Mesh(shaftGeom, mats.shaft);
-  shaftMesh.position.set(L / 2, 0, 0);
+var barsGroup=new THREE.Group(); groups.screen.add(barsGroup);
+for(var bi=0;bi<11;bi++){
+  var bar=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,TANK_H-0.3,8),matSS);
+  bar.rotation.x=Math.PI/2; bar.position.set(SCREEN_X,TANK_H/2-0.05,-1.15+bi*0.23);
+  barsGroup.add(bar);
+}
+inspectable(barsGroup,{name:'Screen bars',func:'Physically intercept solids above a set size (bottles, cans, debris) while allowing liquid and fine solids through.',mat:'Stainless steel bar stock.',manu:'Bar cut to length, located in frame, spot-welded or clamped.',design:'Bar spacing sets the screening cut size; must resist bending under debris load.'});
 
-  // flight
-  const { geom: flightGeom, turns } = buildFlightGeometry(L, shaftR, outerR, pitchM, 28);
-  const flightMesh = new THREE.Mesh(flightGeom, mats.flight);
+/* rake + drive shaft */
+var rakeShaftGeo=new THREE.CylinderGeometry(0.05,0.05,TANK_W-0.1,10);
+var rakeShaft=new THREE.Mesh(rakeShaftGeo,matSteel);
+rakeShaft.rotation.x=Math.PI/2; rakeShaft.position.set(SCREEN_X-0.15,TANK_H+0.35,0);
+groups.screen.add(rakeShaft);
+inspectable(rakeShaft,{name:'Rake drive shaft',func:'Transmits motor/gearbox torque to raise the rake through its cleaning stroke.',mat:'Steel shaft, machined.',manu:'Turned on lathe, keyway machined, mounted in pillow-block bearings.',design:'Sized for torque plus bending from rake reaction load; checked against fatigue.'});
 
-  // rotating assembly (shaft + flight spin together around the conveyor's own axis)
-  const rotatingGroup = new THREE.Group();
-  rotatingGroup.add(shaftMesh);
-  rotatingGroup.add(flightMesh);
-  conveyorGroup.add(rotatingGroup);
-  conveyorGroup.userData.rotatingGroup = rotatingGroup;
+var rakeGroup=new THREE.Group(); groups.screen.add(rakeGroup);
+var rakeBar=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.06,TANK_W-0.2),matBrass);
+rakeGroup.add(rakeBar);
+for(var ti=0;ti<9;ti++){
+  var tooth=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.32,0.04),matBrass);
+  tooth.position.set(0.05,-0.19,-1.1+ti*0.28); rakeGroup.add(tooth);
+}
+rakeGroup.position.set(SCREEN_X,0.35,0);
+inspectable(rakeGroup,{name:'Rake / rake teeth',func:'Rises through the screen at intervals to lift trapped solids clear and drop them into the solid-waste collection area.',mat:'Stainless steel teeth on a carbon steel carrier bar.',manu:'Teeth laser/plasma cut, welded to carrier, guided by rollers in the frame.',design:'Tooth pitch matches bar spacing; stroke length covers full submerged screen height.'});
 
-  // trough (U-channel, half cylinder + straight sides), slightly larger than outer radius
-  if (p.showTrough) {
-    const troughR = outerR * 1.12;
-    const troughGeom = new THREE.CylinderGeometry(troughR, troughR, L, 28, 1, true, Math.PI, Math.PI);
-    troughGeom.rotateZ(Math.PI / 2);
-    const troughMesh = new THREE.Mesh(troughGeom, mats.trough);
-    troughMesh.position.set(L / 2, 0, 0);
-    conveyorGroup.add(troughMesh);
+/* solids bin */
+var binGeo=new THREE.CylinderGeometry(0.32,0.24,0.4,4,1,true);
+var bin=new THREE.Mesh(binGeo,matShell); bin.rotation.y=Math.PI/4; bin.position.copy(BIN_POS);
+groups.screen.add(bin);
+groups.screen.add(new THREE.LineSegments(new THREE.EdgesGeometry(binGeo),matShellEdge)).children.slice(-1)[0].position.copy(BIN_POS);
+inspectable(bin,{name:'Solid waste collection bin',func:'Receives large solids removed from the screen by the rake for periodic disposal.',mat:'Carbon steel, corrosion-protected.',manu:'Rolled/welded shell on a support bracket.',design:'Sized for expected screenings volume between empty-outs.'});
+
+/* screen drive motor/gearbox */
+function motorGearbox(pos, rotY){
+  var g=new THREE.Group();
+  var gb=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.24,0.24),matMotor); g.add(gb);
+  var mo=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,0.34,14),matMotor);
+  mo.rotation.z=Math.PI/2; mo.position.x=0.28; g.add(mo);
+  g.position.copy(pos); if(rotY) g.rotation.y=rotY;
+  return g;
+}
+var screenDrive=motorGearbox(new THREE.Vector3(SCREEN_X-0.15,TANK_H+0.35,TANK_W/2+0.15),0);
+groups.screen.add(screenDrive);
+inspectable(screenDrive,{name:'Screen motor / gearbox',func:'Provides and reduces rotational speed to drive the rake through its lifting stroke.',mat:'Cast iron gearbox housing, steel motor frame (conceptual).',manu:'Off-the-shelf geared motor unit, bolted to a fabricated mounting plate.',design:'Sized for peak torque at rake lift-off with trapped debris, plus service factor.'});
+
+/* ======================================================================
+   SECTION: CHAIN & FLIGHT SLUDGE COLLECTOR
+   ====================================================================== */
+function pathPoint(t){
+  var x,y;
+  if(t<0.42){ var u=t/0.42; x=-trackHalfLen+u*(2*trackHalfLen); y=trackLowY; }
+  else if(t<0.5){ var a=(t-0.42)/0.08*Math.PI; x=trackHalfLen+trackR*Math.sin(a); y=trackCenterY-trackR*Math.cos(a); }
+  else if(t<0.92){ var u2=(t-0.5)/0.42; x=trackHalfLen-u2*(2*trackHalfLen); y=trackHighY; }
+  else { var a2=(t-0.92)/0.08*Math.PI; x=-trackHalfLen-trackR*Math.sin(a2); y=trackCenterY+trackR*Math.cos(a2); }
+  return {x:x,y:y};
+}
+var NUM_FLIGHTS=7, flights=[];
+var flightMatGroup=new THREE.Group(); groups.collector.add(flightMatGroup);
+for(var fi=0; fi<NUM_FLIGHTS; fi++){
+  var fgeo=new THREE.BoxGeometry(0.07,0.46,TANK_W-0.5);
+  var fmesh=new THREE.Mesh(fgeo,matBrass);
+  flightMatGroup.add(fmesh);
+  flights.push({mesh:fmesh, offset:fi/NUM_FLIGHTS, t:0, carrying:[]});
+}
+inspectable(flightMatGroup,{name:'Scraper flights',func:'Cross-members fixed to the chain that sweep settled sludge along the tank floor toward the hopper.',mat:'Stainless steel plate.',manu:'Plate cut, formed, welded to chain brackets.',design:'Width spans the tank; checked for bending under sludge/drag load and wear allowance.'});
+
+/* chain rails (visual hint of two chains) */
+function chainRail(zOff){
+  var pts=[]; for(var i=0;i<=60;i++){ var p=pathPoint(i/60); pts.push(new THREE.Vector3(p.x,p.y,zOff)); }
+  var geo=new THREE.BufferGeometry().setFromPoints(pts);
+  return new THREE.LineLoop(geo, new THREE.LineBasicMaterial({color:0x6b7b86}));
+}
+groups.collector.add(chainRail(-(TANK_W/2-0.3)));
+groups.collector.add(chainRail(TANK_W/2-0.3));
+
+/* sprockets */
+var sprocketGeo=new THREE.CylinderGeometry(trackR,trackR,0.12,20);
+var sprocketMat=new THREE.MeshStandardMaterial({color:0x5b6b77,metalness:0.6,roughness:0.4});
+[-trackHalfLen,trackHalfLen].forEach(function(sx,idx){
+  var s=new THREE.Mesh(sprocketGeo,sprocketMat);
+  s.rotation.x=Math.PI/2; s.position.set(sx,trackCenterY,0);
+  groups.collector.add(s);
+  inspectable(s,{name: idx===0?'Return sprocket':'Drive sprocket', func:idx===0?'Idler that redirects the chain around the inlet end of the loop.':'Driven sprocket that pulls the chain and flights around the loop.', mat:'Cast/machined steel.', manu:'Cast blank, machined teeth and bore, keyed to shaft.', design:'Tooth count and pitch matched to chain; bore sized to shaft with keyway.'});
+});
+var collDrive=motorGearbox(new THREE.Vector3(trackHalfLen+0.15,trackCenterY+trackR+0.35,TANK_W/2+0.15),0);
+groups.collector.add(collDrive);
+inspectable(collDrive,{name:'Collector motor / gearbox',func:'Drives the collector chain at slow speed to sweep settled sludge continuously.',mat:'Cast iron gearbox housing, steel motor frame (conceptual).',manu:'Geared motor unit bolted to a fabricated mount at the drive sprocket shaft.',design:'Sized for chain pull at full sludge/drag load plus starting torque.'});
+
+/* floor sludge chunks (visual accumulation ahead of flights, decorative) */
+var matSludgeM = new THREE.MeshStandardMaterial({color:0xc97a3c,metalness:0.05,roughness:0.9});
+
+/* ======================================================================
+   SECTION: SLUDGE HOPPER
+   ====================================================================== */
+var hopperGeo=new THREE.CylinderGeometry(0.22,0.9,0.7,4,1,true);
+var hopperMesh=new THREE.Mesh(hopperGeo,matShell);
+hopperMesh.rotation.y=Math.PI/4; hopperMesh.position.set(hopperX,hopperY,0);
+groups.hopper.add(hopperMesh);
+groups.hopper.add(new THREE.LineSegments(new THREE.EdgesGeometry(hopperGeo),matShellEdge)).children.slice(-1)[0].position.copy(hopperMesh.position);
+inspectable(hopperMesh,{name:'Sludge hopper',func:'Collects sludge swept off the tank floor by the collector and funnels it down to the screw conveyor inlet.',mat:'Stainless steel plate, sloped walls for self-clearing flow.',manu:'Plate cut, brake-formed, welded seams.',design:'Hopper angle set above sludge angle of repose to avoid bridging/blockage.'});
+
+var flangeGeo=new THREE.TorusGeometry(0.24,0.03,8,20);
+var flange=new THREE.Mesh(flangeGeo,matSteel);
+flange.rotation.x=Math.PI/2; flange.position.set(hopperX,hopperY-0.5,0);
+groups.hopper.add(flange);
+inspectable(flange,{name:'Flanged connection',func:'Bolted joint connecting the hopper outlet to the screw conveyor inlet trough.',mat:'Carbon steel flange, elastomer gasket.',manu:'Machined flange face, drilled bolt circle.',design:'Bolt pattern and gasket rated for sludge pressure and maintenance access.'});
+
+/* ======================================================================
+   SECTION: SCREW CONVEYOR — continuous helical flight
+   ====================================================================== */
+var troughGeo=new THREE.CylinderGeometry(CONV_R,CONV_R,CONV_LEN,24,1,true,Math.PI*0.15,Math.PI*1.7);
+var trough=new THREE.Mesh(troughGeo,matShell);
+trough.rotation.z=Math.PI/2; trough.position.set(convX0+CONV_LEN/2,convY,0);
+groups.conveyor.add(trough);
+groups.conveyor.add(new THREE.LineSegments(new THREE.EdgesGeometry(troughGeo),matShellEdge)).children.slice(-1)[0].position.copy(trough.position);
+groups.conveyor.children[groups.conveyor.children.length-1].rotation.copy(trough.rotation);
+inspectable(trough,{name:'Conveyor trough',func:'Encloses the screw and guides conveyed sludge toward the discharge outlet.',mat:'Stainless / abrasion-resistant steel liner.',manu:'Rolled half-shell, welded end plates, bolted covers.',design:'Diameter and length set from required sludge throughput and residence time.'});
+
+var shaftGroup=new THREE.Group(); shaftGroup.position.set(convX0,convY,0); groups.conveyor.add(shaftGroup);
+var shaftGeo=new THREE.CylinderGeometry(0.045,0.045,CONV_LEN,12);
+var screwShaft=new THREE.Mesh(shaftGeo,matSteel);
+screwShaft.rotation.z=Math.PI/2; screwShaft.position.x=CONV_LEN/2; shaftGroup.add(screwShaft);
+inspectable(screwShaft,{name:'Screw shaft',func:'Central shaft carrying the helical flight and transmitting drive torque along the conveyor.',mat:'Steel shaft, machined.',manu:'Turned, keyways machined at flight and coupling locations.',design:'Sized for torsional and bending stress under sludge load; deflection limited by intermediate hanger bearings on long runs.'});
+
+/* continuous helicoid flight geometry */
+function buildHelix(length, pitch, innerR, outerR, segPerTurn){
+  var turns = length/pitch;
+  var totalSeg = Math.max(8, Math.round(turns*segPerTurn));
+  var positions=[], indices=[];
+  for(var i=0;i<=totalSeg;i++){
+    var ang = (i/segPerTurn) * Math.PI*2;
+    var x = (ang/(Math.PI*2)) * pitch;
+    if(x>length) x=length;
+    var cy=Math.cos(ang), sy=Math.sin(ang);
+    positions.push(x, innerR*cy, innerR*sy);   // inner ring vertex 2*i
+    positions.push(x, outerR*cy, outerR*sy);   // outer ring vertex 2*i+1
+    if(x>=length) break;
   }
-
-  target.set(L / 2, 0, 0);
-  radius = Math.max(3, L * 1.9);
-  updateCamera();
-
-  const geo = { turns, L, shaftR, outerR, pitchM };
-  buildTankAndOutlet(geo, p);
+  var count = positions.length/3/2;
+  for(var k=0;k<count-1;k++){
+    var a=2*k, b=2*k+1, c=2*(k+1), d=2*(k+1)+1;
+    indices.push(a,b,c, b,d,c);
+  }
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
   return geo;
 }
+var flightGeo = buildHelix(CONV_LEN, 0.15, 0.05, CONV_R-0.02, 22);
+var flightMesh = new THREE.Mesh(flightGeo, new THREE.MeshStandardMaterial({color:0xc9a227,metalness:0.55,roughness:0.4,side:THREE.DoubleSide}));
+shaftGroup.add(flightMesh);
+inspectable(flightMesh,{name:'Helical flight',func:'Continuous helical ribbon that advances sludge along the trough as the shaft rotates.',mat:'Stainless / wear-resistant steel plate.',manu:'Plate blanked, helically formed (roll- or press-formed), welded to shaft in sections.',design:'Pitch and diameter set the throughput per shaft revolution; edge clearance to trough kept tight to limit backflow.'});
 
-// ---------- Engineering calculations ----------
-function computeCapacity(p) {
-  const D = p.diameter / 1000, d = p.shaft / 1000, P = p.pitch / 1000, N = p.rpm, C = p.fill / 100;
-  // Q (m3/hr) = (pi/4)*(D^2 - d^2) * P * N * 60 * C
-  const Q = (Math.PI / 4) * (D * D - d * d) * P * N * 60 * C;
-  return Q;
-}
+/* coupling + drive at conveyor start */
+var coupling=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.16,12),matDarkSteel);
+coupling.rotation.z=Math.PI/2; coupling.position.set(convX0-0.15,convY,0);
+groups.conveyor.add(coupling);
+inspectable(coupling,{name:'Coupling',func:'Connects the gearbox output shaft to the screw shaft, accommodating minor misalignment.',mat:'Steel, flexible-element type (conceptual).',manu:'Machined hubs with elastomer insert.',design:'Rated above peak start-up torque; sized to shaft diameter.'});
+var convDrive=motorGearbox(new THREE.Vector3(convX0-0.55,convY,0),Math.PI/2);
+groups.conveyor.add(convDrive);
+inspectable(convDrive,{name:'Conveyor motor / gearbox',func:'Provides low-speed, high-torque drive to rotate the screw shaft continuously.',mat:'Cast iron gearbox housing, steel motor frame (conceptual).',manu:'Off-the-shelf geared motor bolted to a fabricated mounting plate on the frame.',design:'Torque sized from conveyor power calculation (see Calcs tab) with service factor.'});
 
-function computeBOM(geo, p) {
-  const rows = [];
-  // shaft: solid bar
-  const shaftVol = Math.PI * geo.shaftR * geo.shaftR * geo.L;
-  const shaftWt = shaftVol * STEEL_DENSITY;
-  rows.push({ label: 'Shaft (solid bar)', qty: '1', wt: shaftWt });
+var chuteGeo=new THREE.CylinderGeometry(0.05,0.16,0.35,12,1,true);
+var chute=new THREE.Mesh(chuteGeo,matShell);
+chute.position.set(convX0+CONV_LEN+0.05,convY-0.35,0);
+groups.conveyor.add(chute);
+inspectable(chute,{name:'Sludge discharge outlet',func:'Directs conveyed sludge out of the trough for downstream handling or disposal.',mat:'Carbon steel, corrosion-protected.',manu:'Rolled/welded funnel section bolted to trough end plate.',design:'Sized to pass expected peak sludge cake volume without bridging.'});
 
-  // flight: helical ribbon surface area * plate thickness
-  const thickness = 0.004; // 4mm plate
-  const helixLenPerTurn = Math.sqrt(Math.pow(Math.PI * (geo.outerR + geo.shaftR), 2) + geo.pitchM * geo.pitchM);
-  const flightArea = (geo.outerR - geo.shaftR) * helixLenPerTurn * geo.turns;
-  const flightWt = flightArea * thickness * STEEL_DENSITY;
-  rows.push({ label: 'Flight (helical plate)', qty: geo.turns.toFixed(1) + ' turns', wt: flightWt });
+/* ======================================================================
+   SECTION: LABELS, CALLOUTS, GROUND
+   ====================================================================== */
+var ground=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({color:scene.background.getHex(),roughness:1}));
+ground.rotation.x=-Math.PI/2; ground.position.y=-1.85; scene.add(ground);
+var grid=new THREE.GridHelper(34,34,0x33424c,0x1c2530); grid.position.y=-1.849; scene.add(grid);
 
-  // trough: half-cylinder shell
-  if (p.showTrough) {
-    const troughR = geo.outerR * 1.12;
-    const troughThk = 0.003;
-    const troughArea = Math.PI * troughR * geo.L; // half circumference * length
-    const troughWt = troughArea * troughThk * STEEL_DENSITY;
-    rows.push({ label: 'Trough (U-channel, 3mm)', qty: '1', wt: troughWt });
-  }
-
-  // end flanges / bearings — nominal fixed items
-  rows.push({ label: 'End bearing housings', qty: '2', wt: 2 * 4.5 });
-  rows.push({ label: 'Drive coupling', qty: '1', wt: 3.2 });
-
-  return rows;
-}
-
-function updateBOM(rows) {
-  const tbody = document.getElementById('bomBody');
-  tbody.innerHTML = '';
-  let totalQty = 0, totalWt = 0;
-  rows.forEach(r => {
-    totalWt += r.wt;
-    totalQty += 1;
-    tbody.innerHTML += `<tr><td>${r.label}</td><td class="num">${r.qty}</td><td class="num">${r.wt.toFixed(1)}</td></tr>`;
+var labelDefs=[
+  {text:'Mechanical screen', pos:new THREE.Vector3(SCREEN_X,TANK_H+0.15,-1.4), n:1},
+  {text:'Sedimentation tank', pos:new THREE.Vector3(-1.6,TANK_H+0.15,1.6), n:2},
+  {text:'Chain & flight collector', pos:new THREE.Vector3(0,trackHighY+0.3,TANK_W/2+0.1), n:3},
+  {text:'Sludge hopper', pos:new THREE.Vector3(hopperX,0.45,0), n:4},
+  {text:'Screw conveyor', pos:new THREE.Vector3(convX0+CONV_LEN/2,convY+0.55,0), n:5},
+  {text:'Discharge', pos:new THREE.Vector3(convX0+CONV_LEN+0.05,convY-0.55,0), n:6},
+  {text:'Structural frame', pos:new THREE.Vector3(-3.9,-1.5,1.45), n:7},
+  {text:'Raw water (turbid)', pos:new THREE.Vector3(-2.6,1.95,1.55), noCallout:true},
+  {text:'Treated water (clear)', pos:new THREE.Vector3(2.6,1.95,1.55), noCallout:true},
+  {text:'Treated water outlet', pos:new THREE.Vector3(4.3,2.05,0), noCallout:true}
+];
+var labelEls = labelDefs.map(function(d){
+  var el=document.createElement('div'); el.className='label3d'; el.textContent=d.text;
+  wrap.appendChild(el); return el;
+});
+var calloutEls = labelDefs.map(function(d){
+  var el=document.createElement('div'); el.className='callout'; el.textContent=d.n; el.style.display='none';
+  wrap.appendChild(el); return el;
+});
+function updateLabels(){
+  var w=wrap.clientWidth,h=wrap.clientHeight;
+  labelDefs.forEach(function(d,i){
+    var v=d.pos.clone().project(camera);
+    var vis = v.z<1;
+    labelEls[i].style.display = (vis && !explode) ? 'block':'none';
+    calloutEls[i].style.display = (vis && explode && !d.noCallout) ? 'flex':'none';
+    var lx=((v.x*0.5+0.5)*w), ly=((-v.y*0.5+0.5)*h);
+    labelEls[i].style.left=lx+'px'; labelEls[i].style.top=ly+'px';
+    calloutEls[i].style.left=lx+'px'; calloutEls[i].style.top=ly+'px';
   });
-  document.getElementById('bomQty').textContent = totalQty;
-  document.getElementById('bomWt').textContent = totalWt.toFixed(1);
-  document.getElementById('statusCount').textContent = `${totalQty} components modeled`;
 }
 
-// ---------- Controls ----------
-function currentParams() {
-  return {
-    length: parseFloat(document.getElementById('length').value),
-    diameter: parseFloat(document.getElementById('diameter').value),
-    shaft: parseFloat(document.getElementById('shaft').value),
-    pitch: parseFloat(document.getElementById('pitch').value),
-    rpm: parseFloat(document.getElementById('rpm').value),
-    incline: parseFloat(document.getElementById('incline').value),
-    fill: parseFloat(document.getElementById('fill').value),
-    showTrough: document.getElementById('showTrough').checked
+/* ======================================================================
+   SECTION: WASTE INTERACTION — spawning & per-particle state machine
+   ====================================================================== */
+var particles=[];
+var PIPE_DUR=0.7, BEING_REMOVED_DUR=1.3, HOPPER_DROP_DUR=0.55, CONV_DUR=2.6, DISCHARGE_DUR=0.5;
+var SETTLE_DUR={sand:1.1,sludge:2.1,organic:3.3};
+
+function spawnParticle(typeId){
+  var def = WASTE_TYPES.filter(function(w){return w.id===typeId;})[0];
+  if(!def) return;
+  var geo = def.cat==='large'
+    ? (typeId==='can' ? new THREE.CylinderGeometry(0.11,0.11,0.26,10) : new THREE.BoxGeometry(0.2,0.32,0.2))
+    : new THREE.SphereGeometry(def.cat==='sand'?0.075:0.13, 10,10);
+  var mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:def.color,roughness:0.65,emissive:def.color,emissiveIntensity:0.28}));
+  var startPos = new THREE.Vector3(SCREEN_X-1.4, 3.1, (Math.random()-0.5)*0.6);
+  mesh.position.copy(startPos);
+  scene.add(mesh);
+  var p = {
+    mesh:mesh, cat:def.cat, state:'falling_in_pipe', t0:elapsed,
+    from:startPos.clone(),
+    to:new THREE.Vector3(SCREEN_X+0.05, def.cat==='large' ? (1.5+Math.random()*0.6) : 2.0, (Math.random()-0.5)*(TANK_W-0.7)),
+    floorX: -trackHalfLen+0.35+Math.random()*1.7,
+    flightIdx:-1
   };
+  particles.push(p);
 }
 
-function refresh() {
-  const p = currentParams();
-  document.getElementById('vLen').textContent = p.length.toFixed(2);
-  document.getElementById('vDia').textContent = p.diameter;
-  document.getElementById('vShaft').textContent = p.shaft;
-  document.getElementById('vPitch').textContent = p.pitch;
-  document.getElementById('vRpm').textContent = p.rpm;
-  document.getElementById('vIncline').textContent = p.incline;
-  document.getElementById('vFill').textContent = p.fill;
-
-  const geo = buildConveyor(p);
-  rig.rotation.z = (p.incline * Math.PI) / 180;
-  resetProcess();
-
-  const Q = computeCapacity(p);
-  document.getElementById('capacity').textContent = Q.toFixed(2);
-  document.getElementById('rpmOut').textContent = p.rpm;
-  document.getElementById('turnsOut').textContent = geo.turns.toFixed(1);
-
-  const rows = computeBOM(geo, p);
-  updateBOM(rows);
-}
-
-['length','diameter','shaft','pitch','rpm','incline','fill','showTrough'].forEach(id => {
-  document.getElementById(id).addEventListener('input', refresh);
-});
-
-document.getElementById('startBtn').addEventListener('click', () => {
-  running = true;
-  document.getElementById('processStatus').textContent = 'Running';
-});
-document.getElementById('pauseBtn').addEventListener('click', () => {
-  running = false;
-  document.getElementById('processStatus').textContent = 'Paused';
-});
-document.getElementById('resetBtn').addEventListener('click', resetProcess);
-
-// ---------- Process animation (tank -> conveyor -> outlet) ----------
-const clock = new THREE.Clock();
-
-function updateProcess(dt) {
-  if (!running) return;
-  const p = currentParams();
-  const rpm = p.rpm;
-  const omega = (rpm * Math.PI * 2) / 60; // rad/s
-
-  // spin the screw
-  const rotatingGroup = conveyorGroup.userData.rotatingGroup;
-  if (rotatingGroup) rotatingGroup.rotation.x -= omega * dt;
-
-  const L = p.length;
-  const transitSpeed = (rpm / 40) * (L / 2.2); // m/s along conveyor, scaled by rpm
-
-  let inTank = 0;
-  particles.forEach(part => {
-    if (part.phase === 'tank') {
-      inTank++;
-      part.t += dt * part.speed;
-      // drift slowly toward the inlet (x approaching tankBounds.x1)
-      const target = new THREE.Vector3(tankBounds.x1 + 0.02, part.mesh.position.y, part.mesh.position.z);
-      part.mesh.position.lerp(target, Math.min(1, dt * 0.3));
-      if (part.mesh.position.x > tankBounds.x1 - 0.03 && Math.random() < dt * 0.4) {
-        part.phase = 'transit';
-        part.mesh.position.set(0, 0, 0);
-        part.progress = 0;
+function updateParticles(dt){
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];
+    var age = elapsed - p.t0;
+    if(p.state==='falling_in_pipe'){
+      var pr = Math.min(1, age/PIPE_DUR);
+      p.mesh.position.lerpVectors(p.from, p.to, pr);
+      if(pr>=1){
+        if(p.cat==='large'){ p.state='caught_on_screen'; screenLoad++; }
+        else { p.state='settling'; p.t0=elapsed; p.from=p.to.clone();
+          p.to=new THREE.Vector3(p.floorX,0.12,p.mesh.position.z*0.4); }
       }
-    } else if (part.phase === 'transit') {
-      part.progress += (transitSpeed / Math.max(L, 0.1)) * dt;
-      const x = Math.min(part.progress, 1) * L;
-      const angle = part.progress * 30;
-      part.mesh.position.set(x, Math.cos(angle) * (p.diameter/2000) * 0.5, Math.sin(angle) * (p.diameter/2000) * 0.5);
-      if (part.progress >= 1) {
-        part.phase = 'falling';
-        part.fallVel = 0;
-        part.mesh.position.set(outletGroup.userData.binX, outletGroup.userData.binTopY + 0.05, 0);
-      }
-    } else if (part.phase === 'falling') {
-      part.fallVel += 9.8 * dt; // gravity
-      part.mesh.position.y -= part.fallVel * dt;
-      const landY = outletGroup.userData.binBottomY + outletGroup.userData.pileLevel;
-      if (part.mesh.position.y <= landY) {
-        part.phase = 'done';
-        part.mesh.visible = false;
-        const ud = outletGroup.userData;
-        ud.pileLevel = Math.min(ud.binMaxH, ud.pileLevel + ud.binMaxH / PARTICLE_COUNT);
-        if (ud.pile) {
-          const pileW = ud.binW ? ud.binW * 0.85 : 0.3;
-          const pileD = ud.binD ? ud.binD * 0.85 : 0.3;
-          ud.pile.geometry.dispose();
-          ud.pile.geometry = new THREE.BoxGeometry(pileW, Math.max(0.005, ud.pileLevel), pileD);
-          ud.pile.position.y = ud.binBottomY + ud.pileLevel / 2;
+    } else if(p.state==='caught_on_screen'){
+      p.mesh.position.y += Math.sin(elapsed*3+i)*0.0006;
+    } else if(p.state==='being_removed'){
+      var pr2=Math.min(1, age/BEING_REMOVED_DUR);
+      var mid=new THREE.Vector3(SCREEN_X-0.15,TANK_H+0.6,p.from.z);
+      if(pr2<0.5) p.mesh.position.lerpVectors(p.from, mid, pr2/0.5);
+      else p.mesh.position.lerpVectors(mid, BIN_POS, (pr2-0.5)/0.5);
+      if(pr2>=1){ scene.remove(p.mesh); particles.splice(i,1); continue; }
+    } else if(p.state==='settling'){
+      var dur=SETTLE_DUR[p.cat]||1.5;
+      var pr3=Math.min(1, age/dur);
+      p.mesh.position.lerpVectors(p.from,p.to, pr3);
+      p.mesh.position.x += Math.sin(elapsed*2+i)*0.002*(1-pr3);
+      if(pr3>=1){ p.state='on_floor'; settledCount++; }
+    } else if(p.state==='on_floor'){
+      for(var fj=0;fj<flights.length;fj++){
+        var fl=flights[fj];
+        if(fl.t<0.36 && fl.mesh.position.x <= p.floorX && fl.mesh.position.x > p.floorX-0.4){
+          p.state='on_collector'; p.flightIdx=fj; p.zJ=(Math.random()-0.5)*0.5; break;
         }
       }
+    } else if(p.state==='on_collector'){
+      var flm=flights[p.flightIdx];
+      p.mesh.position.set(flm.mesh.position.x, flm.mesh.position.y+0.1, p.zJ);
+      if(flm.t>=0.40){
+        p.state='falling_into_hopper'; p.t0=elapsed;
+        p.from=p.mesh.position.clone();
+        p.to=new THREE.Vector3(hopperX,hopperY-0.45,0);
+      }
+    } else if(p.state==='falling_into_hopper'){
+      var pr4=Math.min(1, age/HOPPER_DROP_DUR);
+      p.mesh.position.lerpVectors(p.from,p.to,pr4);
+      if(pr4>=1){ p.state='in_conveyor'; p.t0=elapsed; }
+    } else if(p.state==='in_conveyor'){
+      var pr5=Math.min(1, age/CONV_DUR);
+      p.mesh.position.set(convX0+pr5*CONV_LEN, convY-CONV_R*0.45+Math.sin(elapsed*20+i)*0.01, Math.sin(elapsed*16+i)*0.02);
+      if(pr5>=1){ p.state='discharging'; p.t0=elapsed; p.from=p.mesh.position.clone(); }
+    } else if(p.state==='discharging'){
+      var pr6=Math.min(1, age/DISCHARGE_DUR);
+      p.mesh.position.set(p.from.x, p.from.y - pr6*0.9, p.from.z);
+      p.mesh.scale.setScalar(1-pr6*0.3);
+      if(pr6>=1){ scene.remove(p.mesh); particles.splice(i,1); discharged++; continue; }
     }
+  }
+}
+
+/* ======================================================================
+   SECTION: RAKE CYCLE & COLLECTOR ANIMATION
+   ====================================================================== */
+var RAKE_PERIOD=5.0, RAKE_DUR=1.4, rakeState='waiting', rakeT0=0;
+var CYCLE=6.0;
+function updateMachinery(dt){
+  // collector flights
+  flights.forEach(function(f){
+    f.t = running ? (((elapsed/CYCLE)+f.offset)%1) : f.t;
+    var p=pathPoint(f.t);
+    f.mesh.position.set(p.x,p.y,0);
+  });
+  // screw conveyor spin
+  if(running) shaftGroup.rotation.x = elapsed*3.4;
+
+  // treated water trickling out over the weir into the outlet pipe
+  var OUT_CYCLE=1.6;
+  outDrips.forEach(function(d){
+    var t = running ? ((elapsed/OUT_CYCLE)+d.offset)%1 : d.offset;
+    var x = 4.05 + t*0.55;
+    var y = 1.75 - Math.sin(t*Math.PI)*0.02;
+    d.mesh.position.set(x,y,0);
+    d.mesh.visible = running;
   });
 
-  const clearedPct = Math.round(((PARTICLE_COUNT - inTank - countTransit()) / PARTICLE_COUNT) * 100);
-  const remainPct = 100 - clearedPct;
-  document.getElementById('wasteRemaining').textContent = Math.max(0, remainPct);
-
-  // fade tank water from murky to clearer as waste is removed
-  if (waterMesh) {
-    const frac = inTank / PARTICLE_COUNT;
-    const murky = new THREE.Color(0x6b5a3a), clear = new THREE.Color(0x3a7aa8);
-    waterMesh.material.color.copy(clear).lerp(murky, frac);
-    waterMesh.material.opacity = 0.35 + frac * 0.4;
-  }
-
-  const allDone = particles.every(pt => pt.phase === 'done');
-  if (allDone) {
-    running = false;
-    document.getElementById('processStatus').textContent = 'Complete — water treated';
+  // rake cycle
+  if(running){
+    var since = elapsed - rakeT0;
+    if(rakeState==='waiting' && since>=RAKE_PERIOD){
+      rakeState='raking'; rakeT0=elapsed;
+      particles.forEach(function(p){
+        if(p.state==='caught_on_screen'){ p.state='being_removed'; p.t0=elapsed; p.from=p.mesh.position.clone(); screenLoad=Math.max(0,screenLoad-1); }
+      });
+    } else if(rakeState==='raking'){
+      var pr=Math.min(1,(elapsed-rakeT0)/RAKE_DUR);
+      rakeGroup.position.y = 0.35 + pr*(TANK_H+0.3);
+      if(pr>=1){ rakeState='waiting'; rakeT0=elapsed; rakeGroup.position.y=0.35; }
+    }
   }
 }
-function countTransit() { return particles.filter(pt => pt.phase === 'transit').length; }
 
-// ---------- Init ----------
-function animate() {
+/* ======================================================================
+   SECTION: EXPLODED VIEW
+   ====================================================================== */
+var explodeOffsets = {
+  tank:new THREE.Vector3(0,0.9,0),
+  screen:new THREE.Vector3(-1.6,0,0),
+  collector:new THREE.Vector3(0,1.6,0),
+  hopper:new THREE.Vector3(0.4,-1.0,0),
+  conveyor:new THREE.Vector3(1.6,-1.6,0),
+  frame:new THREE.Vector3(0,-1.4,0)
+};
+var basePos = {};
+Object.keys(explodeOffsets).forEach(function(k){ basePos[k]=groups[k].position.clone(); });
+function updateExplode(dt){
+  explodeT += ((explode?1:0)-explodeT)*Math.min(1,dt*3.5);
+  Object.keys(explodeOffsets).forEach(function(k){
+    var off=explodeOffsets[k];
+    groups[k].position.set(basePos[k].x+off.x*explodeT, basePos[k].y+off.y*explodeT, basePos[k].z+off.z*explodeT);
+  });
+}
+
+/* ======================================================================
+   SECTION: UI — waste panel, visibility toggles, tabs, footer controls
+   ====================================================================== */
+var wasteListEl=document.getElementById('wasteList');
+WASTE_TYPES.forEach(function(w){
+  var el=document.createElement('div');
+  el.className='waste-item'; el.draggable=true;
+  el.innerHTML='<span class="dot" style="background:#'+w.color.toString(16).padStart(6,'0')+'"></span><span><div>'+w.name+'</div><small>'+w.note+'</small></span>';
+  el.addEventListener('dragstart',function(e){ e.dataTransfer.setData('text/plain', w.id); });
+  el.addEventListener('click',function(){ spawnParticle(w.id); if(!running) toggleRun(true); });
+  wasteListEl.appendChild(el);
+});
+wrap.addEventListener('dragover',function(e){ e.preventDefault(); });
+wrap.addEventListener('drop',function(e){
+  e.preventDefault();
+  var id=e.dataTransfer.getData('text/plain');
+  if(id){ spawnParticle(id); if(!running) toggleRun(true); }
+});
+
+var visListEl=document.getElementById('visList');
+[['tank','Tank & water'],['screen','Mechanical screen'],['collector','Sludge collector'],
+ ['hopper','Hopper'],['conveyor','Screw conveyor'],['frame','Structural frame']].forEach(function(pair){
+  var row=document.createElement('label'); row.className='toggle-row';
+  row.innerHTML='<input type="checkbox" checked data-g="'+pair[0]+'"/>'+pair[1];
+  visListEl.appendChild(row);
+  row.querySelector('input').addEventListener('change',function(e){
+    groups[pair[0]].visible = e.target.checked;
+  });
+});
+var labelsRow=document.createElement('label'); labelsRow.className='toggle-row';
+labelsRow.innerHTML='<input type="checkbox" checked id="labelsToggle"/>Labels';
+visListEl.appendChild(labelsRow);
+document.getElementById('labelsToggle').addEventListener('change',function(e){
+  labelEls.forEach(function(el){ el.style.visibility = e.target.checked?'visible':'hidden'; });
+});
+
+document.querySelectorAll('.tabs button').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.tabs button').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.tabpanel').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    document.querySelector('.tabpanel[data-tab="'+btn.dataset.tab+'"]').classList.add('active');
+  });
+});
+
+function showInspect(info){
+  document.getElementById('inspectEmpty').style.display='none';
+  document.getElementById('inspectContent').style.display='block';
+  document.getElementById('iName').textContent=info.name;
+  document.getElementById('iFunc').textContent=info.func;
+  document.getElementById('iMat').textContent=info.mat;
+  document.getElementById('iManu').textContent=info.manu;
+  document.getElementById('iDesign').textContent=info.design;
+  document.querySelectorAll('.tabs button').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.tabpanel').forEach(function(p){p.classList.remove('active');});
+  document.querySelector('.tabs [data-tab="inspect"]').classList.add('active');
+  document.querySelector('.tabpanel[data-tab="inspect"]').classList.add('active');
+}
+
+var startBtn=document.getElementById('startBtn');
+function toggleRun(force){
+  running = (typeof force==='boolean') ? force : !running;
+  startBtn.textContent = running?'Pause':'Start';
+  startBtn.classList.toggle('paused', !running);
+  document.getElementById('modePill').textContent = running?'PROCESSING':'IDLE';
+  document.getElementById('modePill').className = running?'running':'idle';
+  document.getElementById('stOpState').textContent = running?'PROCESSING':'IDLE';
+}
+startBtn.addEventListener('click',function(){ toggleRun(); });
+document.getElementById('resetBtn').addEventListener('click',function(){
+  particles.forEach(function(p){ scene.remove(p.mesh); });
+  particles=[]; discharged=0; screenLoad=0; settledCount=0;
+  running=false; toggleRun(false); rakeState='waiting'; rakeT0=elapsed;
+  rakeGroup.position.y=0.35;
+});
+document.getElementById('speed').addEventListener('input',function(e){ speedMul=parseFloat(e.target.value); });
+document.getElementById('explodeBtn').addEventListener('click',function(){
+  explode=!explode; this.textContent = explode?'Assemble':'Explode';
+});
+
+/* ======================================================================
+   SECTION: ENGINEERING DATA — BOM
+   ====================================================================== */
+var BOM=[
+  ['P-001','Sedimentation tank','Stainless / coated carbon steel',1,'Plate cut, rolled, welded'],
+  ['P-002','Screen frame','Stainless steel',1,'Plate cut, welded frame'],
+  ['P-003','Screen bars','Stainless steel bar',11,'Cut to length, located in frame'],
+  ['P-004','Rake','Stainless steel','1','Laser/plasma cut, welded'],
+  ['P-005','Rake drive shaft','Steel, machined',1,'Turned, keyway machined'],
+  ['P-006','Collector chain','Steel, hardened pins',2,'Purchased roller/engineering chain'],
+  ['P-007','Scraper flight','Stainless steel plate',7,'Cut, formed, welded to chain'],
+  ['P-008','Drive sprocket','Steel, machined',2,'Cast blank, machined teeth'],
+  ['P-009','Sludge hopper','Stainless steel plate',1,'Cut, brake-formed, welded'],
+  ['P-010','Screw shaft','Steel, machined',1,'Turned, keyways machined'],
+  ['P-011','Helical flight','Stainless steel plate',1,'Blanked, helically formed, welded'],
+  ['P-012','Conveyor trough','Stainless steel liner',1,'Rolled half-shell, welded'],
+  ['P-013','Motor mount plate','Carbon steel',3,'Cut, drilled, welded'],
+  ['P-014','Structural frame (RHS)','Carbon steel',1,'Cut, welded, bolted sub-frames'],
+  ['P-015','Base plate','Carbon steel',8,'Cut, drilled']
+];
+var bomTable=document.getElementById('bomTable');
+bomTable.innerHTML='<tr><th>Part No.</th><th>Component</th><th>Material</th><th>Qty</th><th>Process</th></tr>'+
+  BOM.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td></tr>'; }).join('');
+
+/* ======================================================================
+   SECTION: ENGINEERING DATA — PRELIMINARY CALCULATIONS
+   ====================================================================== */
+var CALCS=[
+  {name:'Screw conveyor power (indicative)',
+   inputs:'Capacity Q ≈ 1.2 t/h, length L = 4.2 m, material factor ≈ 4 (sludge)',
+   formula:'P (kW) ≈ Q × L × C / 367',
+   calc:'1.2 × 4.2 × 4 / 367',
+   result:'≈ 0.055 kW at the flight — select next standard geared motor with service factor'},
+  {name:'Screw shaft torque',
+   inputs:'Motor output ≈ 0.37 kW (selected), shaft speed n ≈ 25 rpm',
+   formula:'T (Nm) = 9550 × P / n',
+   calc:'9550 × 0.37 / 25',
+   result:'≈ 141 Nm — used to size shaft diameter and keyway'},
+  {name:'Scraper flight loading',
+   inputs:'Assumed sludge drag ≈ 60 N per flight, submerged width 2.5 m',
+   formula:'Bending moment M = F × (width/2)',
+   calc:'60 × (2.5/2)',
+   result:'≈ 75 Nm per flight — checked against plate section modulus'},
+  {name:'Factor of safety — scraper flight',
+   inputs:'Estimated bending stress σ ≈ 38 MPa, material yield ≈ 210 MPa (SS304 annealed)',
+   formula:'FoS = σ_yield / σ_applied',
+   calc:'210 / 38',
+   result:'≈ 5.5 — conservative, acceptable for a first-pass concept'}
+];
+var calcList=document.getElementById('calcList');
+calcList.innerHTML = CALCS.map(function(c){
+  return '<div class="calc-card"><h4>'+c.name+'</h4><div class="calc-grid">'+
+    '<dt>Input</dt><dd>'+c.inputs+'</dd>'+
+    '<dt>Formula</dt><dd class="mono">'+c.formula+'</dd>'+
+    '<dt>Calculation</dt><dd class="mono">'+c.calc+'</dd>'+
+    '</div><div class="calc-result">Result — '+c.result+'</div></div>';
+}).join('');
+
+/* ======================================================================
+   SECTION: DRAWINGS TAB (schematic title-block cards)
+   ====================================================================== */
+function drawIcon(kind){
+  var shapes = {
+    ga:'<rect x="6" y="14" width="60" height="24" fill="none" stroke="currentColor"/><circle cx="20" cy="26" r="6" fill="none" stroke="currentColor"/>',
+    screen:'<rect x="14" y="6" width="4" height="44" fill="currentColor"/><rect x="24" y="6" width="4" height="44" fill="currentColor"/><rect x="34" y="6" width="4" height="44" fill="currentColor"/><rect x="44" y="6" width="4" height="44" fill="currentColor"/>',
+    rake:'<rect x="10" y="24" width="44" height="6" fill="currentColor"/><rect x="14" y="30" width="3" height="14" fill="currentColor"/><rect x="24" y="30" width="3" height="14" fill="currentColor"/><rect x="34" y="30" width="3" height="14" fill="currentColor"/><rect x="44" y="30" width="3" height="14" fill="currentColor"/>',
+    tank:'<rect x="6" y="10" width="60" height="34" fill="none" stroke="currentColor"/><line x1="6" y1="38" x2="66" y2="38" stroke="currentColor"/>',
+    collector:'<ellipse cx="36" cy="26" rx="26" ry="12" fill="none" stroke="currentColor"/><line x1="10" y1="26" x2="62" y2="26" stroke="currentColor" stroke-dasharray="3,3"/>',
+    scraper:'<rect x="10" y="20" width="52" height="8" fill="currentColor"/>',
+    hopper:'<polygon points="14,10 58,10 42,44 30,44" fill="none" stroke="currentColor"/>',
+    conveyor:'<rect x="6" y="20" width="60" height="16" rx="8" fill="none" stroke="currentColor"/><path d="M12 28 Q20 18 28 28 T44 28 T60 28" fill="none" stroke="currentColor"/>',
+    frame:'<line x1="10" y1="10" x2="10" y2="46" stroke="currentColor"/><line x1="62" y1="10" x2="62" y2="46" stroke="currentColor"/><line x1="10" y1="46" x2="62" y2="46" stroke="currentColor"/><line x1="10" y1="10" x2="62" y2="10" stroke="currentColor"/>'
+  };
+  return '<svg width="72" height="52" viewBox="0 0 72 52" style="color:var(--muted)">'+shapes[kind]+'</svg>';
+}
+var DRAWINGS=[
+  ['DWG-000','General Arrangement','ga','—','1:50','A'],
+  ['DWG-002','Mechanical Screen','screen','SS bar/frame','1:20','A'],
+  ['DWG-004','Rake Assembly','rake','SS/carbon steel','1:20','A'],
+  ['DWG-001','Sedimentation Tank','tank','Coated carbon steel','1:50','A'],
+  ['DWG-006','Sludge Collector','collector','Steel chain, SS flights','1:25','A'],
+  ['DWG-007','Scraper Flight','scraper','Stainless steel plate','1:10','A'],
+  ['DWG-009','Sludge Hopper','hopper','SS plate','1:15','A'],
+  ['DWG-010','Screw Conveyor','conveyor','SS shaft &amp; flight','1:20','A'],
+  ['DWG-014','Support Frame','frame','Carbon steel RHS','1:25','A']
+];
+document.getElementById('drawList').innerHTML = DRAWINGS.map(function(d){
+  return '<div class="draw-card">'+drawIcon(d[2])+'<div class="draw-meta"><b>'+d[1]+'</b><br/>Dwg No. '+d[0]+' · Rev '+d[5]+'<br/>Material: '+d[3]+'<br/>Scale '+d[4]+'</div></div>';
+}).join('');
+
+/* ======================================================================
+   SECTION: WORKFLOW TAB
+   ====================================================================== */
+var WORKFLOW=[
+  ['Design requirements','Define flow rate, solids characteristics and site constraints that set the equipment envelope.'],
+  ['3D CAD modeling','Model tank, screen, collector, hopper and conveyor as a coordinated assembly.'],
+  ['Engineering calculations','Preliminary sizing of shafts, flights, power and structural members.'],
+  ['2D manufacturing drawings','Derive fabrication drawings with dimensions, tolerances and material call-outs from the 3D model.'],
+  ['Material selection','Assign materials per component based on corrosion, wear and load requirements.'],
+  ['Cutting','Plate and bar stock cut to size (laser, plasma or saw) per drawing.'],
+  ['Machining','Shafts, bores and mating features machined to tolerance.'],
+  ['Welding','Fabricated sub-assemblies welded per procedure and inspected.'],
+  ['Assembly','Sub-assemblies mounted to the structural frame and aligned.'],
+  ['Dimensional inspection','Critical dimensions and alignments checked against drawings.'],
+  ['Installation','Equipment installed and connected on site.'],
+  ['Performance evaluation','Commissioned and checked against the original design flow and duty.']
+];
+document.getElementById('flowList').innerHTML = WORKFLOW.map(function(w,i){
+  return '<div class="flow-step"><div class="fh"><span><span class="n">'+(i+1)+'</span>'+w[0]+'</span></div><div class="flow-desc">'+w[1]+'</div></div>';
+}).join('');
+document.querySelectorAll('.flow-step').forEach(function(el){
+  el.addEventListener('click',function(){ el.classList.toggle('open'); });
+});
+
+/* ======================================================================
+   SECTION: MAIN ANIMATION LOOP
+   ====================================================================== */
+var clock=new THREE.Clock();
+function animate(){
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  updateProcess(dt);
-  renderer.render(scene, camera);
+  var dt = clock.getDelta();
+  if(running) elapsed += dt*speedMul;
+
+  if(tweenTarget){
+    var pr=Math.min(1,(elapsed-tweenStart)/tweenDur);
+    var e2=1-Math.pow(1-pr,3);
+    radius = radius + (tweenTarget.radius-radius)*e2*0.3 + 0;
+    theta += (tweenTarget.theta-theta)*e2*0.3;
+    phi += (tweenTarget.phi-phi)*e2*0.3;
+    target.lerp(tweenTarget.target, e2*0.3);
+    if(pr>=1){ radius=tweenTarget.radius; theta=tweenTarget.theta; phi=tweenTarget.phi; target.copy(tweenTarget.target); tweenTarget=null; }
+    updateCamera();
+  }
+
+  updateMachinery(dt);
+  if(running) updateParticles(dt);
+  updateExplode(dt);
+  updateLabels();
+
+  document.getElementById('hudFlow').textContent = running? '500 m³/day' : '0 m³/day';
+  document.getElementById('hudScreen').textContent = screenLoad+' items';
+  document.getElementById('hudSettled').textContent = settledCount;
+  document.getElementById('hudCollector').textContent = running? '0.3 m/min' : '0 m/min';
+  document.getElementById('hudConveyor').textContent = running? '25 rpm' : '0 rpm';
+  document.getElementById('hudDischarge').textContent = particles.some(function(p){return p.state==='discharging';}) ? 'DISCHARGING' : (running?'standby':'—');
+  document.getElementById('stParticles').textContent = particles.length;
+  document.getElementById('stDischarged').textContent = discharged;
+
+  renderer.render(scene,camera);
 }
-resize();
-refresh();
 animate();
+
+window.addEventListener('resize', function(){
+  camera.aspect = wrap.clientWidth/wrap.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+});
 </script>
 </body>
 </html>
